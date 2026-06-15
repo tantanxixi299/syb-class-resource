@@ -81,6 +81,8 @@ tr:hover td{background:#fffbf2}
 <script>
 const BLOB_ID = '019ecc54-55b7-7862-ba72-8aded269a3e1';
 const API = 'https://jsonblob.com/api/jsonBlob/' + BLOB_ID;
+// CORS 代理用于 GET 读取（解决浏览器跨域拦截）
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
 
 function showToast(msg, isError) {
   const t = document.getElementById('toast');
@@ -111,7 +113,8 @@ function renderTable(data) {
 
 function loadData(retryCount) {
   if (retryCount === undefined) retryCount = 0;
-  fetch(API).then(function(r) {
+  var url = retryCount === 0 ? (CORS_PROXY + encodeURIComponent(API)) : API;
+  fetch(url).then(function(r) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.text();
   }).then(function(text) {
