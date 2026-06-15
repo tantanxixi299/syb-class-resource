@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SYB创业班 · 班级资源调研表</title>
+<meta property="og:title" content="SYB创业班 · 班级资源调研表">
+<meta property="og:description" content="2026.6.4-6.14学期班 | 填写资源信息，毕业后互帮互助">
+<meta property="og:type" content="website">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f7fa;color:#333;line-height:1.6;padding-bottom:40px}
+.header{background:#4facfe;color:#fff;padding:24px 20px;text-align:center}
+.header h1{font-size:20px;margin-bottom:2px}
+.header p{font-size:13px;opacity:0.9}
+.container{max-width:700px;margin:0 auto;padding:0 16px}
+.section-title{font-size:16px;font-weight:700;color:#2c3e50;margin:20px 0 12px;padding-left:12px;border-left:4px solid #4facfe}
+.form-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:20px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:14px;font-weight:600;color:#555;margin-bottom:4px}
+.form-group input,.form-group textarea,.form-group select{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:15px;outline:none;font-family:inherit}
+.form-group input:focus,.form-group textarea:focus,.form-group select:focus{border-color:#4facfe}
+.form-group textarea{min-height:80px;resize:vertical}
+.form-group select{appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%23999'/%3E%3C/svg%3E") no-repeat right 12px center;padding-right:32px}
+.btn-submit{width:100%;padding:12px;background:#4facfe;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer}
+.btn-submit:active{transform:scale(0.98)}
+.btn-submit:disabled{opacity:0.6}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#27ae60;color:#fff;padding:10px 24px;border-radius:8px;font-size:14px;z-index:999;opacity:0;transition:opacity 0.3s}
+.toast.show{opacity:1}
+.toast.error{background:#e74c3c}
+.stats-bar{display:flex;justify-content:space-between;align-items:center;padding:12px 0;font-size:14px;color:#888}
+.stats-bar strong{color:#4facfe}
+.table-wrapper{overflow-x:auto;-webkit-overflow-scrolling:touch;background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:20px}
+table{width:100%;min-width:680px;border-collapse:collapse;font-size:13px}
+thead{background:#f0f4f8}
+th{padding:12px 10px;text-align:left;font-weight:600;color:#555;white-space:nowrap;border-bottom:2px solid #e0e6ed}
+td{padding:10px;border-bottom:1px solid #f0f0f0;vertical-align:top;word-break:break-all}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fafe}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:12px;font-weight:600}
+.badge-yes{background:#e8f5e9;color:#2e7d32}
+.badge-no{background:#fce4ec;color:#c62828}
+.empty-state{text-align:center;padding:40px 20px;color:#aaa}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+.footer{text-align:center;padding:20px;color:#bbb;font-size:12px}
+.btn-del{background:none;border:none;color:#e74c3c;font-size:12px;cursor:pointer;padding:2px 6px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>📋 SYB创业班 · 班级资源调研表</h1>
+  <p>2026.6.4 - 6.14 学期班 | 填写资源信息，毕业后互帮互助 ✨</p>
+</div>
+<div id="toast" class="toast"></div>
+<div class="container">
+  <div class="section-title">✏️ 填写我的信息</div>
+  <div class="form-card">
+    <div class="form-group"><label>姓名</label><input id="name" type="text" placeholder="请输入你的姓名" maxlength="20"></div>
+    <div class="form-group"><label>希望同学怎么称呼你</label><input id="nickname" type="text" placeholder="例如：老王、阿花、小陈…" maxlength="20"></div>
+    <div class="form-group"><label>所在的组</label><select id="group"><option value="">请选择你所在的组</option><option value="学习组">学习组</option><option value="宣传组">宣传组</option><option value="娱乐组">娱乐组</option><option value="监督组">监督组</option></select></div>
+    <div class="form-group"><label>电话</label><input id="phone" type="tel" placeholder="手机号码" maxlength="15"></div>
+    <div class="form-group"><label>微信号</label><input id="wechat" type="text" placeholder="微信号" maxlength="30"></div>
+    <div class="form-group"><label>擅长或做过什么</label><textarea id="skills" placeholder="例如：会计、装修、餐饮管理、短视频运营、电商…" maxlength="200"></textarea></div>
+    <div class="form-group"><label>对哪一行比较感兴趣</label><textarea id="interests" placeholder="例如：跨境电商、社区团购、新能源、教育培训…" maxlength="200"></textarea></div>
+    <div class="form-group"><label>是否愿意向有需要的老师/同学提供自己擅长的事务？</label><select id="willing"><option value="是">✅ 是，愿意提供帮助</option><option value="否">❌ 暂时不方便</option><option value="视情况">🤝 视情况而定</option></select></div>
+    <button class="btn-submit" onclick="submitForm()">📤 提交信息</button>
+  </div>
+  <div class="section-title">📊 全班资源汇总</div>
+  <div class="stats-bar"><span>已收集：<strong id="count">0</strong> 份</span><span style="font-size:12px;color:#aaa;">⬅️ 左右滑动查看更多</span></div>
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>序号</th><th>姓名</th><th>称呼</th><th>所在组</th><th>电话</th><th>微信号</th><th>擅长/做过</th><th>感兴趣行业</th><th>是否愿意帮助</th><th>时间</th><th></th></tr></thead>
+      <tbody id="tableBody"><tr class="empty-state"><td colspan="11"><div class="icon">📭</div><div>加载中…</div></td></tr></tbody>
+    </table>
+  </div>
+  <div class="footer">数据仅供班级内部交流使用 · 请勿外传</div>
+</div>
+<script>
+const BLOB_ID = '019ecc54-55b7-7862-ba72-8aded269a3e1';
+const API = 'https://jsonblob.com/api/jsonBlob/' + BLOB_ID;
+
+function showToast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(function(){ t.className = 'toast'; }, 2500);
+}
+
+function esc(s) {
+  if (!s) return '';
+  var div = document.createElement('div');
+  div.textContent = s; return div.innerHTML;
+}
+
+function renderTable(data) {
+  var tbody = document.getElementById('tableBody');
+  document.getElementById('count').textContent = data.length;
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr class="empty-state"><td colspan="11"><div class="icon">📭</div><div>还没有人填写，快来当第一个吧！</div></td></tr>';
+    return;
+  }
+  var rows = '';
+  data.forEach(function(e) {
+    var badge = e.willing_to_help === '是' ? '<span class="badge badge-yes">是</span>' : e.willing_to_help === '否' ? '<span class="badge badge-no">否</span>' : '<span class="badge" style="background:#fff3e0;color:#e65100;">视情况</span>';
+    rows += '<tr><td>' + e.id + '</td><td><strong>' + esc(e.name) + '</strong></td><td>' + esc(e.nickname) + '</td><td>' + esc(e.group) + '</td><td>' + esc(e.phone) + '</td><td>' + esc(e.wechat) + '</td><td>' + esc(e.skills) + '</td><td>' + esc(e.interests) + '</td><td>' + badge + '</td><td style="white-space:nowrap;color:#999;">' + esc(e.time) + '</td><td><button class="btn-del" onclick="delEntry(' + e.id + ')">✕</button></td></tr>';
+  });
+  tbody.innerHTML = rows;
+}
+
+function loadData() {
+  fetch(API).then(function(r) { return r.json(); }).then(function(data) {
+    renderTable(data || []);
+  }).catch(function() {
+    document.getElementById('tableBody').innerHTML = '<tr class="empty-state"><td colspan="11"><div class="icon">⚠️</div><div>加载失败，请刷新重试</div></td></tr>';
+  });
+}
+
+function submitForm() {
+  var name = document.getElementById('name').value.trim();
+  if (!name) { showToast('请填写姓名', true); return; }
+
+  var entry = {
+    name: name,
+    nickname: document.getElementById('nickname').value.trim(),
+    group: document.getElementById('group').value,
+    phone: document.getElementById('phone').value.trim(),
+    wechat: document.getElementById('wechat').value.trim(),
+    skills: document.getElementById('skills').value.trim(),
+    interests: document.getElementById('interests').value.trim(),
+    willing_to_help: document.getElementById('willing').value
+  };
+
+  var btn = document.querySelector('.btn-submit');
+  btn.disabled = true; btn.textContent = '提交中...';
+
+  // Get current data first, then append
+  fetch(API).then(function(r) { return r.json(); }).then(function(data) {
+    data = data || [];
+    entry.id = data.length + 1;
+    var now = new Date();
+    entry.time = ('0'+(now.getMonth()+1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2) + ' ' + ('0'+now.getHours()).slice(-2) + ':' + ('0'+now.getMinutes()).slice(-2);
+    data.push(entry);
+    return fetch(API, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  }).then(function() {
+    showToast('✅ 提交成功！');
+    ['name','nickname','phone','wechat','skills','interests'].forEach(function(id){ document.getElementById(id).value = ''; });
+    document.getElementById('group').value = '';
+    document.getElementById('willing').value = '是';
+    loadData();
+    btn.disabled = false; btn.textContent = '📤 提交信息';
+  }).catch(function(e) {
+    showToast('提交失败，请重试', true);
+    btn.disabled = false; btn.textContent = '📤 提交信息';
+  });
+}
+
+function delEntry(id) {
+  if (!confirm('确定要删除这条记录吗？')) return;
+  fetch(API).then(function(r) { return r.json(); }).then(function(data) {
+    data = data.filter(function(e) { return e.id !== id; });
+    data.forEach(function(e, i) { e.id = i + 1; });
+    return fetch(API, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  }).then(function() {
+    showToast('已删除');
+    loadData();
+  }).catch(function() { showToast('删除失败', true); });
+}
+
+loadData();
+</script>
+</body>
+</html>
