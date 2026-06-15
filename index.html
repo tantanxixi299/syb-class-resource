@@ -109,11 +109,22 @@ function renderTable(data) {
   tbody.innerHTML = rows;
 }
 
-function loadData() {
-  fetch(API).then(function(r) { return r.json(); }).then(function(data) {
+function loadData(retryCount) {
+  if (retryCount === undefined) retryCount = 0;
+  fetch(API).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text();
+  }).then(function(text) {
+    if (!text || text.trim() === '') return [];
+    try { return JSON.parse(text); } catch(e) { return []; }
+  }).then(function(data) {
     renderTable(data || []);
   }).catch(function() {
-    document.getElementById('tableBody').innerHTML = '<tr class="empty-state"><td colspan="11"><div class="icon">⚠️</div><div>加载失败，请刷新重试</div></td></tr>';
+    if (retryCount < 2) {
+      setTimeout(function() { loadData(retryCount + 1); }, 1500);
+    } else {
+      document.getElementById('tableBody').innerHTML = '<tr class="empty-state"><td colspan="11"><div class="icon">⚠️</div><div>加载失败，请刷新重试</div></td></tr>';
+    }
   });
 }
 
@@ -135,8 +146,15 @@ function submitForm() {
   var btn = document.querySelector('.btn-submit');
   btn.disabled = true; btn.textContent = '提交中...';
 
-  fetch(API).then(function(r) { return r.json(); }).then(function(data) {
-    data = data || [];
+  fetch(API).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text();
+  }).then(function(text) {
+    var data = [];
+    if (text && text.trim() !== '') {
+      try { data = JSON.parse(text); } catch(e) { data = []; }
+    }
+    if (!Array.isArray(data)) data = [];
     entry.id = data.length + 1;
     var now = new Date();
     entry.time = ('0'+(now.getMonth()+1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2) + ' ' + ('0'+now.getHours()).slice(-2) + ':' + ('0'+now.getMinutes()).slice(-2);
@@ -157,7 +175,15 @@ function submitForm() {
 
 function delEntry(id) {
   if (!confirm('确定要删除这条记录吗？')) return;
-  fetch(API).then(function(r) { return r.json(); }).then(function(data) {
+  fetch(API).then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.text();
+  }).then(function(text) {
+    var data = [];
+    if (text && text.trim() !== '') {
+      try { data = JSON.parse(text); } catch(e) { data = []; }
+    }
+    if (!Array.isArray(data)) data = [];
     data = data.filter(function(e) { return e.id !== id; });
     data.forEach(function(e, i) { e.id = i + 1; });
     return fetch(API, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
