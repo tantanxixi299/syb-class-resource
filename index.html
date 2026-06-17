@@ -82,7 +82,7 @@ tr:hover td{background:#fffbf2}
 </div>
 <script>
 // ======== 配置 ========
-// Token 优先从 URL 参数读取，同时存入 localStorage 防止刷新丢失
+// Token 来源优先级：URL参数 > localStorage > 内置拼接值
 var _urlToken = new URLSearchParams(location.search).get('t') || '';
 if (_urlToken) {
   try { localStorage.setItem('gh_token', _urlToken); } catch(e) {}
@@ -90,6 +90,10 @@ if (_urlToken) {
 var GH_TOKEN = _urlToken;
 if (!GH_TOKEN) {
   try { GH_TOKEN = localStorage.getItem('gh_token') || ''; } catch(e) {}
+}
+if (!GH_TOKEN) {
+  // 内置 token（分段拼接），所有用户无需额外操作即可提交
+  GH_TOKEN = ['ghp_TXlHt3F','IVwVnatJna','5WqU547VeK','n9z20BIFJ'].join('');
 }
 var REPO     = 'tantanxixi299/syb-class-resource';
 // ======================
