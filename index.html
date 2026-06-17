@@ -48,15 +48,6 @@ tr:hover td{background:#fffbf2}
 .footer{text-align:center;padding:20px;color:#bcaaa4;font-size:12px}
 .btn-edit{background:none;border:none;color:#f5a623;font-size:12px;cursor:pointer;padding:2px 6px;margin-right:4px}
 .btn-del{background:none;border:none;color:#e74c3c;font-size:12px;cursor:pointer;padding:2px 6px}
-/* 编辑弹窗 */
-.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:1000;justify-content:center;align-items:center}
-.modal-overlay.show{display:flex}
-.modal-box{background:#fffef9;border-radius:12px;padding:20px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
-.modal-box h3{margin-bottom:16px;color:#5d4037;font-size:16px}
-.modal-btns{display:flex;gap:10px;margin-top:16px}
-.modal-btns button{flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
-.btn-save{background:linear-gradient(135deg, #f5a623, #f7b84e);color:#fff}
-.btn-cancel{background:#e8d5b0;color:#6d4c41}
 </style>
 </head>
 <body>
@@ -77,6 +68,7 @@ tr:hover td{background:#fffbf2}
     <div class="form-group"><label>对哪一行比较感兴趣</label><textarea id="interests" placeholder="例如：跨境电商、社区团购、新能源、教育培训…" maxlength="200"></textarea></div>
     <div class="form-group"><label>是否愿意向有需要的老师/同学提供自己擅长的事务？</label><select id="willing"><option value="是">✅ 是，愿意提供帮助</option><option value="否">❌ 暂时不方便</option><option value="视情况">🤝 视情况而定</option></select></div>
     <button class="btn-submit" onclick="submitForm()">📤 提交信息</button>
+    <div id="editHint" style="display:none;text-align:center;margin-top:8px;font-size:12px;color:#f5a623;"></div>
   </div>
   <div class="section-title">📊 全班资源汇总</div>
   <div class="stats-bar"><span>已收集：<strong id="count">0</strong> 份</span><span style="font-size:12px;color:#a1887f;">⬅️ 左右滑动查看更多</span></div>
@@ -87,25 +79,6 @@ tr:hover td{background:#fffbf2}
     </table>
   </div>
   <div class="footer">数据仅供班级内部交流使用 · 请勿外传</div>
-</div>
-<!-- 编辑弹窗 -->
-<div id="editModal" class="modal-overlay" onclick="if(event.target===this)closeEdit()">
-  <div class="modal-box">
-    <h3>✏️ 修改记录</h3>
-    <input type="hidden" id="editIssueNum">
-    <div class="form-group"><label>姓名</label><input id="editName" type="text" maxlength="20"></div>
-    <div class="form-group"><label>称呼</label><input id="editNickname" type="text" maxlength="20"></div>
-    <div class="form-group"><label>所在组</label><select id="editGroup"><option value="">请选择</option><option value="学习组">学习组</option><option value="宣传组">宣传组</option><option value="娱乐组">娱乐组</option><option value="监督组">监督组</option></select></div>
-    <div class="form-group"><label>电话</label><input id="editPhone" type="tel" maxlength="15"></div>
-    <div class="form-group"><label>微信号</label><input id="editWechat" type="text" maxlength="30"></div>
-    <div class="form-group"><label>擅长/做过</label><textarea id="editSkills" maxlength="200"></textarea></div>
-    <div class="form-group"><label>感兴趣行业</label><textarea id="editInterests" maxlength="200"></textarea></div>
-    <div class="form-group"><label>是否愿意帮助</label><select id="editWilling"><option value="是">✅ 是</option><option value="否">❌ 否</option><option value="视情况">🤝 视情况</option></select></div>
-    <div class="modal-btns">
-      <button class="btn-save" onclick="saveEdit()">💾 保存</button>
-      <button class="btn-cancel" onclick="closeEdit()">取消</button>
-    </div>
-  </div>
 </div>
 <script>
 // ======== 配置 ========
@@ -224,62 +197,40 @@ function loadData() {
   });
 }
 
-// ======== 编辑功能 ========
+// ======== 编辑功能：回填到上方表单 ========
 
-// 缓存所有 issue 数据，供编辑时查找
-var _allIssues = [];
-
-// 打开编辑弹窗
+// 点击编辑时，把数据回填到上方「填写我的信息」表单
 function openEdit(issueNum, entryJson) {
   var entry = JSON.parse(entryJson);
-  document.getElementById('editIssueNum').value = issueNum;
-  document.getElementById('editName').value = entry.name || '';
-  document.getElementById('editNickname').value = entry.nickname || '';
-  document.getElementById('editGroup').value = entry.group || '';
-  document.getElementById('editPhone').value = entry.phone || '';
-  document.getElementById('editWechat').value = entry.wechat || '';
-  document.getElementById('editSkills').value = entry.skills || '';
-  document.getElementById('editInterests').value = entry.interests || '';
-  document.getElementById('editWilling').value = entry.willing_to_help || '是';
-  document.getElementById('editModal').classList.add('show');
+  // 滚动到表单区域
+  document.querySelector('.form-card').scrollIntoView({ behavior: 'smooth' });
+  // 回填数据
+  document.getElementById('name').value = entry.name || '';
+  document.getElementById('nickname').value = entry.nickname || '';
+  document.getElementById('group').value = entry.group || '';
+  document.getElementById('phone').value = entry.phone || '';
+  document.getElementById('wechat').value = entry.wechat || '';
+  document.getElementById('skills').value = entry.skills || '';
+  document.getElementById('interests').value = entry.interests || '';
+  document.getElementById('willing').value = entry.willing_to_help || '是';
+  // 存储原始姓名用于匹配
+  document.getElementById('name').setAttribute('data-orig-name', entry.name || '');
+  // 存储 issue number
+  document.getElementById('name').setAttribute('data-issue-num', issueNum);
+  // 提示
+  var hint = document.getElementById('editHint');
+  hint.style.display = 'block';
+  hint.textContent = '正在编辑「' + esc(entry.name) + '」的记录，修改后点提交即可更新';
+  // 按钮文字
+  document.querySelector('.btn-submit').textContent = '💾 更新信息';
 }
 
-function closeEdit() {
-  document.getElementById('editModal').classList.remove('show');
-}
-
-function saveEdit() {
-  var issueNum = document.getElementById('editIssueNum').value;
-  var entry = {
-    name:       document.getElementById('editName').value.trim(),
-    nickname:   document.getElementById('editNickname').value.trim(),
-    group:      document.getElementById('editGroup').value,
-    phone:      document.getElementById('editPhone').value.trim(),
-    wechat:     document.getElementById('editWechat').value.trim(),
-    skills:     document.getElementById('editSkills').value.trim(),
-    interests:  document.getElementById('editInterests').value.trim(),
-    willing_to_help: document.getElementById('editWilling').value
-  };
-  if (!entry.name) { showToast('姓名不能为空', true); return; }
-
-  fetch('https://api.github.com/repos/' + REPO + '/issues/' + issueNum, {
-    method: 'PATCH',
-    headers: authHeaders(),
-    body: JSON.stringify({
-      title: entry.name,
-      body:  JSON.stringify(entry)
-    })
-  })
-  .then(function(r) {
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    showToast('✅ 已更新');
-    closeEdit();
-    loadData();
-  })
-  .catch(function(e) {
-    console.error('更新失败:', e);
-    showToast('更新失败，请重试', true);
-  });
+// 清除编辑状态
+function clearEditState() {
+  document.getElementById('name').removeAttribute('data-orig-name');
+  document.getElementById('name').removeAttribute('data-issue-num');
+  document.getElementById('editHint').style.display = 'none';
+  document.querySelector('.btn-submit').textContent = '📤 提交信息';
 }
 
 // ======== 提交功能 ========
@@ -308,26 +259,69 @@ function submitForm() {
   btn.disabled = true;
   btn.textContent = '提交中...';
 
-  fetch(API, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: JSON.stringify({
-      title: name,
-      body:  JSON.stringify(entry),
-      labels: ['调研数据']
-    })
+  // 先读取所有 issues，检查是否有同名记录
+  fetch(API + '?state=open&per_page=100', {
+    headers: authHeaders()
   })
   .then(function(r) {
-    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!r.ok) throw new Error('读取失败 HTTP ' + r.status);
     return r.json();
   })
-  .then(function() {
-    showToast('✅ 提交成功！');
+  .then(function(issues) {
+    // 查找是否有同名（issue title 或 body 中的 name）的记录
+    var origName = document.getElementById('name').getAttribute('data-orig-name') || name;
+    var matched = null;
+    for (var i = 0; i < issues.length; i++) {
+      var iss = issues[i];
+      var issBody = {};
+      try { issBody = JSON.parse(iss.body); } catch(e) {}
+      // 优先用 issue number 精确匹配，其次按原始姓名匹配
+      var issueNum = document.getElementById('name').getAttribute('data-issue-num');
+      if (issueNum && iss.number == issueNum) {
+        matched = iss; break;
+      }
+      if (!matched && (iss.title === origName || issBody.name === origName)) {
+        matched = iss;
+      }
+    }
+
+    if (matched) {
+      // 找到同名记录 → 更新（PATCH）
+      return fetch('https://api.github.com/repos/' + REPO + '/issues/' + matched.number, {
+        method: 'PATCH',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          title: name,
+          body:  JSON.stringify(entry)
+        })
+      }).then(function(r) {
+        if (!r.ok) throw new Error('更新失败 HTTP ' + r.status);
+        return { action: 'updated' };
+      });
+    } else {
+      // 没有同名记录 → 新增（POST）
+      return fetch(API, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify({
+          title: name,
+          body:  JSON.stringify(entry),
+          labels: ['调研数据']
+        })
+      }).then(function(r) {
+        if (!r.ok) throw new Error('新增失败 HTTP ' + r.status);
+        return { action: 'created' };
+      });
+    }
+  })
+  .then(function(result) {
+    showToast(result.action === 'updated' ? '✅ 已更新！' : '✅ 提交成功！');
     ['name','nickname','phone','wechat','skills','interests'].forEach(function(id){
       document.getElementById(id).value = '';
     });
     document.getElementById('group').value = '';
     document.getElementById('willing').value = '是';
+    clearEditState();
     loadData();
     btn.disabled = false;
     btn.textContent = '📤 提交信息';
