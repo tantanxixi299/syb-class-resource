@@ -111,13 +111,23 @@ function esc(s) {
 // UTC 时间转北京时间显示 (MM-DD HH:mm)
 function toBeijingTime(isoStr) {
   if (!isoStr) return '';
-  var d = new Date(isoStr);
-  // 加 8 小时得到北京时间
-  d.setHours(d.getHours() + 8);
-  return ('0'+(d.getUTCMonth()+1)).slice(-2) + '-' +
-         ('0'+d.getUTCDate()).slice(-2) + ' ' +
-         ('0'+d.getUTCHours()).slice(-2) + ':' +
-         ('0'+d.getUTCMinutes()).slice(-2);
+  // GitHub 返回 UTC 时间如 "2026-06-17T01:36:00Z"
+  // 直接用正则提取 UTC 时分，加8小时得北京时间，避免浏览器时区解析差异
+  var m = isoStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+  if (!m) return isoStr;
+  var utcH = parseInt(m[4], 10);
+  var utcM = parseInt(m[5], 10);
+  var bjH = utcH + 8;
+  var day = parseInt(m[3], 10);
+  var month = parseInt(m[2], 10);
+  var year = parseInt(m[1], 10);
+  if (bjH >= 24) { bjH -= 24; day += 1; }
+  var daysInMonth = [31,28,31,30,31,30,31,31,30,31,30,31];
+  if (month === 2 && ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0)) daysInMonth[1] = 29;
+  if (day > daysInMonth[month - 1]) { day = 1; month += 1; }
+  if (month > 12) { month = 1; year += 1; }
+  return ('0'+month).slice(-2) + '-' + ('0'+day).slice(-2) + ' ' +
+         ('0'+bjH).slice(-2) + ':' + ('0'+utcM).slice(-2);
 }
 
 function issuesToData(issues) {
