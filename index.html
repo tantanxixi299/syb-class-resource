@@ -76,24 +76,26 @@ tr:hover td{background:#fffbf2}
       <tbody id="tableBody"><tr class="empty-state"><td colspan="11"><div class="icon">📭</div><div>加载中…</div></td></tr></tbody>
     </table>
   </div>
-  <div class="footer">数据仅供班级内部交流使用 · 请勿外传</div>
+  <div class="footer">数据仅供班级内部交流使用 · 请勿传</div>
 </div>
 <script>
-const BLOB_ID = '019ecc54-55b7-7862-ba72-8aded269a3e1';
-const API = 'https://jsonblob.com/api/jsonBlob/' + BLOB_ID;
-// CORS 代理用于 GET 读取（解决浏览器跨域拦截）
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+// ========== 配置 ==========
+var BIN_ID = '6a3132c2da38895dfec91c1a';
+var API_KEY = '$2a$10$mYLVu9gSgs8hIZQygjYVLeFXZIvgWZCPQMU5cU0g42aZCXpIuMnnG';
+var API_BASE = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
 
 function showToast(msg, isError) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast show' + (isError ? ' error' : '');
-  setTimeout(function(){ t.className = 'toast'; }, 2500);
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(function() { t.className = 'toast'; }, 2500);
 }
 
 function esc(s) {
   if (!s) return '';
   var div = document.createElement('div');
-  div.textContent = s; return div.innerHTML;
+  div.textContent = s;
+  return div.innerHTML;
 }
 
 function renderTable(data) {
@@ -105,29 +107,38 @@ function renderTable(data) {
   }
   var rows = '';
   data.forEach(function(e) {
-    var badge = e.willing_to_help === '是' ? '<span class="badge badge-yes">是</span>' : e.willing_to_help === '否' ? '<span class="badge badge-no">否</span>' : '<span class="badge" style="background:#fff3e0;color:#e65100;">视情况</span>';
+    var badge;
+    if (e.willing_to_help === '是') {
+      badge = '<span class="badge badge-yes">是</span>';
+    } else if (e.willing_to_help === '否') {
+      badge = '<span class="badge badge-no">否</span>';
+    } else {
+      badge = '<span class="badge" style="background:#fff3e0;color:#e65100;">视情况</span>';
+    }
     rows += '<tr><td>' + e.id + '</td><td><strong>' + esc(e.name) + '</strong></td><td>' + esc(e.nickname) + '</td><td>' + esc(e.group) + '</td><td>' + esc(e.phone) + '</td><td>' + esc(e.wechat) + '</td><td>' + esc(e.skills) + '</td><td>' + esc(e.interests) + '</td><td>' + badge + '</td><td style="white-space:nowrap;color:#a1887f;">' + esc(e.time) + '</td><td><button class="btn-del" onclick="delEntry(' + e.id + ')">✕</button></td></tr>';
   });
   tbody.innerHTML = rows;
 }
 
-function loadData(retryCount) {
-  if (retryCount === undefined) retryCount = 0;
-  var url = retryCount === 0 ? (CORS_PROXY + encodeURIComponent(API)) : API;
-  fetch(url).then(function(r) {
+// 从 jsonbin.io v3 API 读取数据，响应格式为 {record: ..., metadata: ...}
+function loadData() {
+  fetch(API_BASE + '/latest', {
+    method: 'GET',
+    headers: { 'X-Master-Key': API_KEY }
+  })
+  .then(function(r) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.text();
-  }).then(function(text) {
-    if (!text || text.trim() === '') return [];
-    try { return JSON.parse(text); } catch(e) { return []; }
-  }).then(function(data) {
-    renderTable(data || []);
-  }).catch(function() {
-    if (retryCount < 2) {
-      setTimeout(function() { loadData(retryCount + 1); }, 1500);
-    } else {
-      document.getElementById('tableBody').innerHTML = '<tr class="empty-state"><td colspan="11"><div class="icon">⚠️</div><div>加载失败，请刷新重试</div></td></tr>';
-    }
+    return r.json();
+  })
+  .then(function(json) {
+    // v3 API 返回 {record: ..., metadata: ...}，数据在 record 里
+    var data = json.record;
+    if (!Array.isArray(data)) data = [];
+    renderTable(data);
+  })
+  .catch(function(e) {
+    console.error('加载失败:', e);
+    document.getElementById('tableBody').innerHTML = '<tr class="empty-state"><td colspan="11"><div class="icon">⚠️</div><div>加载失败，请刷新重试</div></td></tr>';
   });
 }
 
@@ -147,53 +158,96 @@ function submitForm() {
   };
 
   var btn = document.querySelector('.btn-submit');
-  btn.disabled = true; btn.textContent = '提交中...';
+  btn.disabled = true;
+  btn.textContent = '提交中...';
 
-  fetch(API).then(function(r) {
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.text();
-  }).then(function(text) {
-    var data = [];
-    if (text && text.trim() !== '') {
-      try { data = JSON.parse(text); } catch(e) { data = []; }
-    }
+  // 先读取当前数据
+  fetch(API_BASE + '/latest', {
+    method: 'GET',
+    headers: { 'X-Master-Key': API_KEY }
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('读取失败 HTTP ' + r.status);
+    return r.json();
+  })
+  .then(function(json) {
+    var data = json.record;
     if (!Array.isArray(data)) data = [];
+
+    // 添加新记录
     entry.id = data.length + 1;
     var now = new Date();
     entry.time = ('0'+(now.getMonth()+1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2) + ' ' + ('0'+now.getHours()).slice(-2) + ':' + ('0'+now.getMinutes()).slice(-2);
     data.push(entry);
-    return fetch(API, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
-  }).then(function() {
+
+    // PUT 更新整个 bin
+    return fetch(API_BASE, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': API_KEY
+      },
+      body: JSON.stringify(data)
+    });
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('提交失败 HTTP ' + r.status);
+    return r.json();
+  })
+  .then(function() {
     showToast('✅ 提交成功！');
-    ['name','nickname','phone','wechat','skills','interests'].forEach(function(id){ document.getElementById(id).value = ''; });
+    // 清空表单
+    ['name','nickname','phone','wechat','skills','interests'].forEach(function(id) {
+      document.getElementById(id).value = '';
+    });
     document.getElementById('group').value = '';
     document.getElementById('willing').value = '是';
     loadData();
-    btn.disabled = false; btn.textContent = '📤 提交信息';
-  }).catch(function(e) {
+    btn.disabled = false;
+    btn.textContent = '📤 提交信息';
+  })
+  .catch(function(e) {
+    console.error('提交失败:', e);
     showToast('提交失败，请重试', true);
-    btn.disabled = false; btn.textContent = '📤 提交信息';
+    btn.disabled = false;
+    btn.textContent = '📤 提交信息';
   });
 }
 
 function delEntry(id) {
   if (!confirm('确定要删除这条记录吗？')) return;
-  fetch(API).then(function(r) {
+
+  fetch(API_BASE + '/latest', {
+    method: 'GET',
+    headers: { 'X-Master-Key': API_KEY }
+  })
+  .then(function(r) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.text();
-  }).then(function(text) {
-    var data = [];
-    if (text && text.trim() !== '') {
-      try { data = JSON.parse(text); } catch(e) { data = []; }
-    }
+    return r.json();
+  })
+  .then(function(json) {
+    var data = json.record;
     if (!Array.isArray(data)) data = [];
     data = data.filter(function(e) { return e.id !== id; });
     data.forEach(function(e, i) { e.id = i + 1; });
-    return fetch(API, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(data) });
-  }).then(function() {
+
+    return fetch(API_BASE, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': API_KEY
+      },
+      body: JSON.stringify(data)
+    });
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('删除失败 HTTP ' + r.status);
     showToast('已删除');
     loadData();
-  }).catch(function() { showToast('删除失败', true); });
+  })
+  .catch(function() {
+    showToast('删除失败', true);
+  });
 }
 
 loadData();
