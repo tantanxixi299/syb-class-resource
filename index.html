@@ -82,7 +82,15 @@ tr:hover td{background:#fffbf2}
 </div>
 <script>
 // ======== 配置 ========
-var GH_TOKEN = new URLSearchParams(location.search).get('t') || '';
+// Token 优先从 URL 参数读取，同时存入 localStorage 防止刷新丢失
+var _urlToken = new URLSearchParams(location.search).get('t') || '';
+if (_urlToken) {
+  try { localStorage.setItem('gh_token', _urlToken); } catch(e) {}
+}
+var GH_TOKEN = _urlToken;
+if (!GH_TOKEN) {
+  try { GH_TOKEN = localStorage.getItem('gh_token') || ''; } catch(e) {}
+}
 var REPO     = 'tantanxixi299/syb-class-resource';
 // ======================
 
