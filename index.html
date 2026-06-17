@@ -46,7 +46,6 @@ tr:hover td{background:#fffbf2}
 .empty-state{text-align:center;padding:40px 20px;color:#a1887f}
 .empty-state .icon{font-size:48px;margin-bottom:12px}
 .footer{text-align:center;padding:20px;color:#bcaaa4;font-size:12px}
-.btn-del{background:none;border:none;color:#e74c3c;font-size:12px;cursor:pointer;padding:2px 6px}
 </style>
 </head>
 <body>
@@ -72,37 +71,69 @@ tr:hover td{background:#fffbf2}
   <div class="stats-bar"><span>已收集：<strong id="count">0</strong> 份</span><span style="font-size:12px;color:#a1887f;">⬅️ 左右滑动查看更多</span></div>
   <div class="table-wrapper">
     <table>
-      <thead><tr><th>序号</th><th>姓名</th><th>称呼</th><th>所在组</th><th>电话</th><th>微信号</th><th>擅长/做过</th><th>感兴趣行业</th><th>是否愿意帮助</th><th>时间</th><th></th></tr></thead>
-      <tbody id="tableBody"><tr class="empty-state"><td colspan="11"><div class="icon">📭</div><div>加载中…</div></td></tr></tbody>
+      <thead><tr><th>序号</th><th>姓名</th><th>称呼</th><th>所在组</th><th>电话</th><th>微信号</th><th>擅长/做过</th><th>感兴趣行业</th><th>是否愿意帮助</th><th>时间</th></tr></thead>
+      <tbody id="tableBody"><tr class="empty-state"><td colspan="10"><div class="icon">📭</div><div>加载中…</div></td></tr></tbody>
     </table>
   </div>
-  <div class="footer">数据仅供班级内部交流使用 · 请勿传</div>
+  <div class="footer">数据仅供班级内部交流使用 · 请勿外传</div>
 </div>
 <script>
-// ========== 配置 ==========
-var BIN_ID = '6a3132c2da38895dfec91c1a';
-var API_KEY = '$2a$10$mYLVu9gSgs8hIZQygjYVLeFXZIvgWZCPQMU5cU0g42aZCXpIuMnnG';
-var API_BASE = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
+// ======== 配置 ========
+// Token 通过 URL 参数传入：?t=ghp_xxxx
+// 例如：https://tantanxixi299.github.io/syb-class-resource/?t=ghp_xxxx
+var GH_TOKEN = new URLSearchParams(location.search).get('t') || '';
+var REPO     = 'tantanxixi299/syb-class-resource';
+// ======================
+
+var API = 'https://api.github.com/repos/' + REPO + '/issues';
+
+function authHeaders() {
+  var h = { 'Accept': 'application/vnd.github.v3+json' };
+  if (GH_TOKEN) h['Authorization'] = 'token ' + GH_TOKEN;
+  return h;
+}
 
 function showToast(msg, isError) {
   var t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast show' + (isError ? ' error' : '');
-  setTimeout(function() { t.className = 'toast'; }, 2500);
+  setTimeout(function(){ t.className = 'toast'; }, 2500);
 }
 
 function esc(s) {
   if (!s) return '';
-  var div = document.createElement('div');
-  div.textContent = s;
-  return div.innerHTML;
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function issuesToData(issues) {
+  return issues
+    .filter(function(iss){ return iss.state === 'open'; })
+    .map(function(iss, idx) {
+      var entry = {};
+      try { entry = JSON.parse(iss.body); } catch(e) { entry = {}; }
+      return {
+        id:       idx + 1,
+        name:       entry.name || iss.title || '',
+        nickname:   entry.nickname || '',
+        group:      entry.group || '',
+        phone:      entry.phone || '',
+        wechat:     entry.wechat || '',
+        skills:     entry.skills || '',
+        interests:  entry.interests || '',
+        willing_to_help: entry.willing_to_help || '',
+        time:       (iss.created_at || '').replace('T',' ').slice(5,16),
+        issue_number: iss.number
+      };
+    });
 }
 
 function renderTable(data) {
   var tbody = document.getElementById('tableBody');
   document.getElementById('count').textContent = data.length;
   if (data.length === 0) {
-    tbody.innerHTML = '<tr class="empty-state"><td colspan="11"><div class="icon">📭</div><div>还没有人填写，快来当第一个吧！</div></td></tr>';
+    tbody.innerHTML = '<tr class="empty-state"><td colspan="10"><div class="icon">📭</div><div>还没有人填写，快来当第一个吧！</div></td></tr>';
     return;
   }
   var rows = '';
@@ -115,30 +146,26 @@ function renderTable(data) {
     } else {
       badge = '<span class="badge" style="background:#fff3e0;color:#e65100;">视情况</span>';
     }
-    rows += '<tr><td>' + e.id + '</td><td><strong>' + esc(e.name) + '</strong></td><td>' + esc(e.nickname) + '</td><td>' + esc(e.group) + '</td><td>' + esc(e.phone) + '</td><td>' + esc(e.wechat) + '</td><td>' + esc(e.skills) + '</td><td>' + esc(e.interests) + '</td><td>' + badge + '</td><td style="white-space:nowrap;color:#a1887f;">' + esc(e.time) + '</td><td><button class="btn-del" onclick="delEntry(' + e.id + ')">✕</button></td></tr>';
+    rows += '<tr><td>' + e.id + '</td><td><strong>' + esc(e.name) + '</strong></td><td>' + esc(e.nickname) + '</td><td>' + esc(e.group) + '</td><td>' + esc(e.phone) + '</td><td>' + esc(e.wechat) + '</td><td>' + esc(e.skills) + '</td><td>' + esc(e.interests) + '</td><td>' + badge + '</td><td style="white-space:nowrap;color:#a1887f;">' + esc(e.time) + '</td></tr>';
   });
   tbody.innerHTML = rows;
 }
 
-// 从 jsonbin.io v3 API 读取数据，响应格式为 {record: ..., metadata: ...}
 function loadData() {
-  fetch(API_BASE + '/latest', {
-    method: 'GET',
-    headers: { 'X-Master-Key': API_KEY }
+  fetch(API + '?state=open&per_page=100', {
+    headers: authHeaders()
   })
   .then(function(r) {
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
   })
-  .then(function(json) {
-    // v3 API 返回 {record: ..., metadata: ...}，数据在 record 里
-    var data = json.record;
-    if (!Array.isArray(data)) data = [];
+  .then(function(issues) {
+    var data = issuesToData(issues);
     renderTable(data);
   })
   .catch(function(e) {
     console.error('加载失败:', e);
-    document.getElementById('tableBody').innerHTML = '<tr class="empty-state"><td colspan="11"><div class="icon">⚠️</div><div>加载失败，请刷新重试</div></td></tr>';
+    document.getElementById('tableBody').innerHTML = '<tr class="empty-state"><td colspan="10"><div class="icon">⚠️</div><div>加载失败，请刷新重试</div></td></tr>';
   });
 }
 
@@ -146,13 +173,18 @@ function submitForm() {
   var name = document.getElementById('name').value.trim();
   if (!name) { showToast('请填写姓名', true); return; }
 
+  if (!GH_TOKEN) {
+    showToast('无法提交：需要访问令牌', true);
+    return;
+  }
+
   var entry = {
     name: name,
-    nickname: document.getElementById('nickname').value.trim(),
-    group: document.getElementById('group').value,
-    phone: document.getElementById('phone').value.trim(),
-    wechat: document.getElementById('wechat').value.trim(),
-    skills: document.getElementById('skills').value.trim(),
+    nickname:  document.getElementById('nickname').value.trim(),
+    group:     document.getElementById('group').value,
+    phone:     document.getElementById('phone').value.trim(),
+    wechat:    document.getElementById('wechat').value.trim(),
+    skills:    document.getElementById('skills').value.trim(),
     interests: document.getElementById('interests').value.trim(),
     willing_to_help: document.getElementById('willing').value
   };
@@ -161,43 +193,22 @@ function submitForm() {
   btn.disabled = true;
   btn.textContent = '提交中...';
 
-  // 先读取当前数据
-  fetch(API_BASE + '/latest', {
-    method: 'GET',
-    headers: { 'X-Master-Key': API_KEY }
+  fetch(API, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({
+      title: name,
+      body:  JSON.stringify(entry),
+      labels: ['调研数据']
+    })
   })
   .then(function(r) {
-    if (!r.ok) throw new Error('读取失败 HTTP ' + r.status);
-    return r.json();
-  })
-  .then(function(json) {
-    var data = json.record;
-    if (!Array.isArray(data)) data = [];
-
-    // 添加新记录
-    entry.id = data.length + 1;
-    var now = new Date();
-    entry.time = ('0'+(now.getMonth()+1)).slice(-2) + '-' + ('0'+now.getDate()).slice(-2) + ' ' + ('0'+now.getHours()).slice(-2) + ':' + ('0'+now.getMinutes()).slice(-2);
-    data.push(entry);
-
-    // PUT 更新整个 bin
-    return fetch(API_BASE, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': API_KEY
-      },
-      body: JSON.stringify(data)
-    });
-  })
-  .then(function(r) {
-    if (!r.ok) throw new Error('提交失败 HTTP ' + r.status);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
   })
   .then(function() {
     showToast('✅ 提交成功！');
-    // 清空表单
-    ['name','nickname','phone','wechat','skills','interests'].forEach(function(id) {
+    ['name','nickname','phone','wechat','skills','interests'].forEach(function(id){
       document.getElementById(id).value = '';
     });
     document.getElementById('group').value = '';
@@ -211,42 +222,6 @@ function submitForm() {
     showToast('提交失败，请重试', true);
     btn.disabled = false;
     btn.textContent = '📤 提交信息';
-  });
-}
-
-function delEntry(id) {
-  if (!confirm('确定要删除这条记录吗？')) return;
-
-  fetch(API_BASE + '/latest', {
-    method: 'GET',
-    headers: { 'X-Master-Key': API_KEY }
-  })
-  .then(function(r) {
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    return r.json();
-  })
-  .then(function(json) {
-    var data = json.record;
-    if (!Array.isArray(data)) data = [];
-    data = data.filter(function(e) { return e.id !== id; });
-    data.forEach(function(e, i) { e.id = i + 1; });
-
-    return fetch(API_BASE, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': API_KEY
-      },
-      body: JSON.stringify(data)
-    });
-  })
-  .then(function(r) {
-    if (!r.ok) throw new Error('删除失败 HTTP ' + r.status);
-    showToast('已删除');
-    loadData();
-  })
-  .catch(function() {
-    showToast('删除失败', true);
   });
 }
 
