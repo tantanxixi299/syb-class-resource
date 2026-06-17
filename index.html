@@ -46,6 +46,17 @@ tr:hover td{background:#fffbf2}
 .empty-state{text-align:center;padding:40px 20px;color:#a1887f}
 .empty-state .icon{font-size:48px;margin-bottom:12px}
 .footer{text-align:center;padding:20px;color:#bcaaa4;font-size:12px}
+.btn-edit{background:none;border:none;color:#f5a623;font-size:12px;cursor:pointer;padding:2px 6px;margin-right:4px}
+.btn-del{background:none;border:none;color:#e74c3c;font-size:12px;cursor:pointer;padding:2px 6px}
+/* 编辑弹窗 */
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:1000;justify-content:center;align-items:center}
+.modal-overlay.show{display:flex}
+.modal-box{background:#fffef9;border-radius:12px;padding:20px;width:90%;max-width:500px;max-height:90vh;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+.modal-box h3{margin-bottom:16px;color:#5d4037;font-size:16px}
+.modal-btns{display:flex;gap:10px;margin-top:16px}
+.modal-btns button{flex:1;padding:10px;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+.btn-save{background:linear-gradient(135deg, #f5a623, #f7b84e);color:#fff}
+.btn-cancel{background:#e8d5b0;color:#6d4c41}
 </style>
 </head>
 <body>
@@ -71,16 +82,33 @@ tr:hover td{background:#fffbf2}
   <div class="stats-bar"><span>已收集：<strong id="count">0</strong> 份</span><span style="font-size:12px;color:#a1887f;">⬅️ 左右滑动查看更多</span></div>
   <div class="table-wrapper">
     <table>
-      <thead><tr><th>序号</th><th>姓名</th><th>称呼</th><th>所在组</th><th>电话</th><th>微信号</th><th>擅长/做过</th><th>感兴趣行业</th><th>是否愿意帮助</th><th>时间</th></tr></thead>
-      <tbody id="tableBody"><tr class="empty-state"><td colspan="10"><div class="icon">📭</div><div>加载中…</div></td></tr></tbody>
+      <thead><tr><th>序号</th><th>姓名</th><th>称呼</th><th>所在组</th><th>电话</th><th>微信号</th><th>擅长/做过</th><th>感兴趣行业</th><th>是否愿意帮助</th><th>时间</th><th>操作</th></tr></thead>
+      <tbody id="tableBody"><tr class="empty-state"><td colspan="11"><div class="icon">📭</div><div>加载中…</div></td></tr></tbody>
     </table>
   </div>
   <div class="footer">数据仅供班级内部交流使用 · 请勿外传</div>
 </div>
+<!-- 编辑弹窗 -->
+<div id="editModal" class="modal-overlay" onclick="if(event.target===this)closeEdit()">
+  <div class="modal-box">
+    <h3>✏️ 修改记录</h3>
+    <input type="hidden" id="editIssueNum">
+    <div class="form-group"><label>姓名</label><input id="editName" type="text" maxlength="20"></div>
+    <div class="form-group"><label>称呼</label><input id="editNickname" type="text" maxlength="20"></div>
+    <div class="form-group"><label>所在组</label><select id="editGroup"><option value="">请选择</option><option value="学习组">学习组</option><option value="宣传组">宣传组</option><option value="娱乐组">娱乐组</option><option value="监督组">监督组</option></select></div>
+    <div class="form-group"><label>电话</label><input id="editPhone" type="tel" maxlength="15"></div>
+    <div class="form-group"><label>微信号</label><input id="editWechat" type="text" maxlength="30"></div>
+    <div class="form-group"><label>擅长/做过</label><textarea id="editSkills" maxlength="200"></textarea></div>
+    <div class="form-group"><label>感兴趣行业</label><textarea id="editInterests" maxlength="200"></textarea></div>
+    <div class="form-group"><label>是否愿意帮助</label><select id="editWilling"><option value="是">✅ 是</option><option value="否">❌ 否</option><option value="视情况">🤝 视情况</option></select></div>
+    <div class="modal-btns">
+      <button class="btn-save" onclick="saveEdit()">💾 保存</button>
+      <button class="btn-cancel" onclick="closeEdit()">取消</button>
+    </div>
+  </div>
+</div>
 <script>
 // ======== 配置 ========
-// Token 通过 URL 参数传入：?t=ghp_xxxx
-// 例如：https://tantanxixi299.github.io/syb-class-resource/?t=ghp_xxxx
 var GH_TOKEN = new URLSearchParams(location.search).get('t') || '';
 var REPO     = 'tantanxixi299/syb-class-resource';
 // ======================
@@ -107,6 +135,18 @@ function esc(s) {
   return d.innerHTML;
 }
 
+// UTC 时间转北京时间显示 (MM-DD HH:mm)
+function toBeijingTime(isoStr) {
+  if (!isoStr) return '';
+  var d = new Date(isoStr);
+  // 加 8 小时得到北京时间
+  d.setHours(d.getHours() + 8);
+  return ('0'+(d.getUTCMonth()+1)).slice(-2) + '-' +
+         ('0'+d.getUTCDate()).slice(-2) + ' ' +
+         ('0'+d.getUTCHours()).slice(-2) + ':' +
+         ('0'+d.getUTCMinutes()).slice(-2);
+}
+
 function issuesToData(issues) {
   return issues
     .filter(function(iss){ return iss.state === 'open'; })
@@ -123,7 +163,7 @@ function issuesToData(issues) {
         skills:     entry.skills || '',
         interests:  entry.interests || '',
         willing_to_help: entry.willing_to_help || '',
-        time:       (iss.created_at || '').replace('T',' ').slice(5,16),
+        time:       toBeijingTime(iss.created_at),
         issue_number: iss.number
       };
     });
@@ -133,7 +173,7 @@ function renderTable(data) {
   var tbody = document.getElementById('tableBody');
   document.getElementById('count').textContent = data.length;
   if (data.length === 0) {
-    tbody.innerHTML = '<tr class="empty-state"><td colspan="10"><div class="icon">📭</div><div>还没有人填写，快来当第一个吧！</div></td></tr>';
+    tbody.innerHTML = '<tr class="empty-state"><td colspan="11"><div class="icon">📭</div><div>还没有人填写，快来当第一个吧！</div></td></tr>';
     return;
   }
   var rows = '';
@@ -146,7 +186,22 @@ function renderTable(data) {
     } else {
       badge = '<span class="badge" style="background:#fff3e0;color:#e65100;">视情况</span>';
     }
-    rows += '<tr><td>' + e.id + '</td><td><strong>' + esc(e.name) + '</strong></td><td>' + esc(e.nickname) + '</td><td>' + esc(e.group) + '</td><td>' + esc(e.phone) + '</td><td>' + esc(e.wechat) + '</td><td>' + esc(e.skills) + '</td><td>' + esc(e.interests) + '</td><td>' + badge + '</td><td style="white-space:nowrap;color:#a1887f;">' + esc(e.time) + '</td></tr>';
+    rows += '<tr>' +
+      '<td>' + e.id + '</td>' +
+      '<td><strong>' + esc(e.name) + '</strong></td>' +
+      '<td>' + esc(e.nickname) + '</td>' +
+      '<td>' + esc(e.group) + '</td>' +
+      '<td>' + esc(e.phone) + '</td>' +
+      '<td>' + esc(e.wechat) + '</td>' +
+      '<td>' + esc(e.skills) + '</td>' +
+      '<td>' + esc(e.interests) + '</td>' +
+      '<td>' + badge + '</td>' +
+      '<td style="white-space:nowrap;color:#a1887f;">' + esc(e.time) + '</td>' +
+      '<td style="white-space:nowrap;">' +
+        '<button class="btn-edit" onclick="openEdit(' + e.issue_number + ', ' + JSON.stringify(JSON.stringify({name:e.name,nickname:e.nickname,group:e.group,phone:e.phone,wechat:e.wechat,skills:e.skills,interests:e.interests,willing_to_help:e.willing_to_help})) + ')">✏️</button>' +
+        '<button class="btn-del" onclick="delEntry(' + e.issue_number + ')">✕</button>' +
+      '</td>' +
+    '</tr>';
   });
   tbody.innerHTML = rows;
 }
@@ -165,9 +220,69 @@ function loadData() {
   })
   .catch(function(e) {
     console.error('加载失败:', e);
-    document.getElementById('tableBody').innerHTML = '<tr class="empty-state"><td colspan="10"><div class="icon">⚠️</div><div>加载失败，请刷新重试</div></td></tr>';
+    document.getElementById('tableBody').innerHTML = '<tr class="empty-state"><td colspan="11"><div class="icon">⚠️</div><div>加载失败，请刷新重试</div></td></tr>';
   });
 }
+
+// ======== 编辑功能 ========
+
+// 缓存所有 issue 数据，供编辑时查找
+var _allIssues = [];
+
+// 打开编辑弹窗
+function openEdit(issueNum, entryJson) {
+  var entry = JSON.parse(entryJson);
+  document.getElementById('editIssueNum').value = issueNum;
+  document.getElementById('editName').value = entry.name || '';
+  document.getElementById('editNickname').value = entry.nickname || '';
+  document.getElementById('editGroup').value = entry.group || '';
+  document.getElementById('editPhone').value = entry.phone || '';
+  document.getElementById('editWechat').value = entry.wechat || '';
+  document.getElementById('editSkills').value = entry.skills || '';
+  document.getElementById('editInterests').value = entry.interests || '';
+  document.getElementById('editWilling').value = entry.willing_to_help || '是';
+  document.getElementById('editModal').classList.add('show');
+}
+
+function closeEdit() {
+  document.getElementById('editModal').classList.remove('show');
+}
+
+function saveEdit() {
+  var issueNum = document.getElementById('editIssueNum').value;
+  var entry = {
+    name:       document.getElementById('editName').value.trim(),
+    nickname:   document.getElementById('editNickname').value.trim(),
+    group:      document.getElementById('editGroup').value,
+    phone:      document.getElementById('editPhone').value.trim(),
+    wechat:     document.getElementById('editWechat').value.trim(),
+    skills:     document.getElementById('editSkills').value.trim(),
+    interests:  document.getElementById('editInterests').value.trim(),
+    willing_to_help: document.getElementById('editWilling').value
+  };
+  if (!entry.name) { showToast('姓名不能为空', true); return; }
+
+  fetch('https://api.github.com/repos/' + REPO + '/issues/' + issueNum, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify({
+      title: entry.name,
+      body:  JSON.stringify(entry)
+    })
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    showToast('✅ 已更新');
+    closeEdit();
+    loadData();
+  })
+  .catch(function(e) {
+    console.error('更新失败:', e);
+    showToast('更新失败，请重试', true);
+  });
+}
+
+// ======== 提交功能 ========
 
 function submitForm() {
   var name = document.getElementById('name').value.trim();
@@ -222,6 +337,25 @@ function submitForm() {
     showToast('提交失败，请重试', true);
     btn.disabled = false;
     btn.textContent = '📤 提交信息';
+  });
+}
+
+// ======== 删除功能 ========
+
+function delEntry(issue_number) {
+  if (!confirm('确定要删除这条记录吗？')) return;
+  fetch('https://api.github.com/repos/' + REPO + '/issues/' + issue_number, {
+    method: 'PATCH',
+    headers: authHeaders(),
+    body: JSON.stringify({ state: 'closed' })
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    showToast('已删除');
+    loadData();
+  })
+  .catch(function() {
+    showToast('删除失败', true);
   });
 }
 
