@@ -48,6 +48,12 @@ tr:hover td{background:#fffbf2}
 .footer{text-align:center;padding:20px;color:#bcaaa4;font-size:12px}
 .btn-edit{background:none;border:none;color:#f5a623;font-size:12px;cursor:pointer;padding:2px 6px;margin-right:4px}
 .btn-del{background:none;border:none;color:#e74c3c;font-size:12px;cursor:pointer;padding:2px 6px}
+/* 姓名列：固定宽度，三字不换行 */
+td.col-name{white-space:nowrap;min-width:52px}
+/* 折叠文本：超过4行隐藏 */
+.fold-text{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer;word-break:break-all}
+.fold-text.expanded{display:block;-webkit-line-clamp:unset;overflow:visible}
+.fold-hint{font-size:11px;color:#f5a623;cursor:pointer;margin-top:2px;user-select:none}
 </style>
 </head>
 <body>
@@ -126,6 +132,24 @@ function esc(s) {
   return d.innerHTML;
 }
 
+// 超过4行内容折叠，点击展开/收起
+function foldCell(s, uid) {
+  if (!s) return '';
+  var escaped = esc(s);
+  // 粗略估算：内容超过 60 个字符才可能超过 4 行，才加折叠
+  if (s.length <= 60) return escaped;
+  return '<div class="fold-text" id="ft_' + uid + '" onclick="toggleFold(\'' + uid + '\')">' + escaped + '</div>' +
+         '<div class="fold-hint" id="fh_' + uid + '" onclick="toggleFold(\'' + uid + '\')">▼ 展开</div>';
+}
+
+function toggleFold(uid) {
+  var el = document.getElementById('ft_' + uid);
+  var hint = document.getElementById('fh_' + uid);
+  if (!el) return;
+  var expanded = el.classList.toggle('expanded');
+  if (hint) hint.textContent = expanded ? '▲ 收起' : '▼ 展开';
+}
+
 // UTC 时间转北京时间显示 (MM-DD HH:mm)
 function toBeijingTime(isoStr) {
   if (!isoStr) return '';
@@ -189,13 +213,13 @@ function renderTable(data) {
     }
     rows += '<tr>' +
       '<td>' + e.id + '</td>' +
-      '<td><strong>' + esc(e.name) + '</strong></td>' +
+      '<td class="col-name"><strong>' + esc(e.name) + '</strong></td>' +
       '<td>' + esc(e.nickname) + '</td>' +
       '<td>' + esc(e.group) + '</td>' +
       '<td>' + esc(e.phone) + '</td>' +
       '<td>' + esc(e.wechat) + '</td>' +
-      '<td>' + esc(e.skills) + '</td>' +
-      '<td>' + esc(e.interests) + '</td>' +
+      '<td>' + foldCell(e.skills, 'sk' + e.issue_number) + '</td>' +
+      '<td>' + foldCell(e.interests, 'in' + e.issue_number) + '</td>' +
       '<td>' + badge + '</td>' +
       '<td style="white-space:nowrap;color:#a1887f;">' + esc(e.time) + '</td>' +
       '<td style="white-space:nowrap;">' +
