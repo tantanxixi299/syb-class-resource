@@ -133,13 +133,41 @@ function esc(s) {
 }
 
 // 超过4行内容折叠，点击展开/收起
+// 先全部渲染为折叠样式，renderTable 完成后再检测实际高度决定是否真的需要折叠
 function foldCell(s, uid) {
   if (!s) return '';
   var escaped = esc(s);
-  // 粗略估算：内容超过 60 个字符才可能超过 4 行，才加折叠
-  if (s.length <= 60) return escaped;
+  // 所有内容先加上 fold-text 类，渲染后由 applyFold() 检查实际高度
   return '<div class="fold-text" id="ft_' + uid + '" onclick="toggleFold(\'' + uid + '\')">' + escaped + '</div>' +
-         '<div class="fold-hint" id="fh_' + uid + '" onclick="toggleFold(\'' + uid + '\')">▼ 展开</div>';
+         '<div class="fold-hint" id="fh_' + uid + '" style="display:none;" onclick="toggleFold(\'' + uid + '\')">▼ 展开</div>';
+}
+
+// 渲染完成后，检测每个 fold-text 的实际高度，不超过4行的去掉折叠样式
+function applyFold() {
+  // 4行高度 = 行高(1.6) × 字号(13px) × 4 ≈ 84px，留一点余量用 80px
+  var LINE_HEIGHT = 13 * 1.6;
+  var MAX_H = LINE_HEIGHT * 4;
+  var els = document.querySelectorAll('.fold-text');
+  for (var i = 0; i < els.length; i++) {
+    var el = els[i];
+    var uid = el.id.replace('ft_', '');
+    var hint = document.getElementById('fh_' + uid);
+    // 先展开测量真实高度
+    el.classList.add('expanded');
+    var realH = el.scrollHeight;
+    el.classList.remove('expanded');
+    if (realH <= MAX_H) {
+      // 内容不超4行，直接去掉折叠限制，不显示展开按钮
+      el.style.webkitLineClamp = 'unset';
+      el.style.overflow = 'visible';
+      el.style.display = 'block';
+      el.style.cursor = 'default';
+      el.onclick = null;
+    } else {
+      // 确实超4行，显示展开按钮
+      if (hint) hint.style.display = 'block';
+    }
+  }
 }
 
 function toggleFold(uid) {
@@ -229,6 +257,8 @@ function renderTable(data) {
     '</tr>';
   });
   tbody.innerHTML = rows;
+  // 渲染完成后检测实际高度，决定是否真正折叠
+  setTimeout(applyFold, 0);
 }
 
 function loadData() {
