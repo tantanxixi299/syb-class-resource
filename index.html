@@ -50,6 +50,8 @@ tr:hover td{background:#fffbf2}
 .btn-del{background:none;border:none;color:#e74c3c;font-size:12px;cursor:pointer;padding:2px 6px}
 /* 姓名列：固定宽度，三字不换行 */
 td.col-name{white-space:nowrap;min-width:52px}
+/* 电话列不换行 */
+td.col-phone{white-space:nowrap}
 /* 折叠文本：超过4行隐藏 */
 .fold-text{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer;word-break:break-all}
 .fold-text.expanded{display:block;-webkit-line-clamp:unset;overflow:visible}
@@ -244,7 +246,7 @@ function renderTable(data) {
       '<td class="col-name"><strong>' + esc(e.name) + '</strong></td>' +
       '<td>' + esc(e.nickname) + '</td>' +
       '<td>' + esc(e.group) + '</td>' +
-      '<td>' + esc(e.phone) + '</td>' +
+      '<td class="col-phone">' + esc(e.phone) + '</td>' +
       '<td>' + esc(e.wechat) + '</td>' +
       '<td>' + foldCell(e.skills, 'sk' + e.issue_number) + '</td>' +
       '<td>' + foldCell(e.interests, 'in' + e.issue_number) + '</td>' +
