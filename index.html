@@ -52,8 +52,8 @@ tr:hover td{background:#fffbf2}
 </head>
 <body>
 <div class="header">
-  <h1>SYB创业班 · 班级资源调研表</h1>
-  <p>2026.6.4 - 6.14 学期班 | 亮出你的优势，发现同学的宝藏 ✨</p>
+  <h1 id="pageTitle">SYB创业班 · 班级资源调研表</h1>
+  <p id="pageSubtitle">2026.6.4 - 6.14 学期班 | 亮出你的优势，发现同学的宝藏 ✨</p>
 </div>
 <div id="toast" class="toast"></div>
 <div class="container">
@@ -61,7 +61,7 @@ tr:hover td{background:#fffbf2}
   <div class="form-card">
     <div class="form-group"><label>姓名</label><input id="name" type="text" placeholder="请输入你的姓名" maxlength="20"></div>
     <div class="form-group"><label>希望同学怎么称呼你</label><input id="nickname" type="text" placeholder="例如：老王、阿花、小陈…" maxlength="20"></div>
-    <div class="form-group"><label>所在的组</label><select id="group"><option value="">请选择你所在的组</option><option value="学习组">学习组</option><option value="宣传组">宣传组</option><option value="娱乐组">娱乐组</option><option value="监督组">监督组</option></select></div>
+    <div class="form-group"><label>所在的组</label><select id="group"><option value="">请选择你所在的组</option><!-- GROUPS 由 JS 动态填充 --></select></div>
     <div class="form-group"><label>电话</label><input id="phone" type="tel" placeholder="手机号码" maxlength="15"></div>
     <div class="form-group"><label>微信号</label><input id="wechat" type="text" placeholder="微信号" maxlength="30"></div>
     <div class="form-group"><label>擅长或做过什么</label><textarea id="skills" placeholder="例如：会计、装修、餐饮管理、短视频运营、电商…" maxlength="200"></textarea></div>
@@ -80,22 +80,28 @@ tr:hover td{background:#fffbf2}
   </div>
   <div class="footer">数据仅供班级内部交流使用 · 请勿外传</div>
 </div>
+<!-- ============================================================
+     SYB 班级资源调研表 - 可复用模板
+     使用方式：复制本文件 → 修改下方 CONFIG 里的三个值 → 提交
+     ============================================================ -->
 <script>
-// ======== 配置 ========
-// Token 来源优先级：URL参数 > localStorage > 内置拼接值
-var _urlToken = new URLSearchParams(location.search).get('t') || '';
-if (_urlToken) {
-  try { localStorage.setItem('gh_token', _urlToken); } catch(e) {}
-}
-var GH_TOKEN = _urlToken;
-if (!GH_TOKEN) {
-  try { GH_TOKEN = localStorage.getItem('gh_token') || ''; } catch(e) {}
-}
-if (!GH_TOKEN) {
-  // 内置 token（分段拼接），所有用户无需额外操作即可提交
-  GH_TOKEN = ['ghp_TXlHt3F','IVwVnatJna','5WqU547VeK','n9z20BIFJ'].join('');
-}
-var REPO     = 'tantanxixi299/syb-class-resource';
+// ======== 只需修改这里 ↓ ========
+var CONFIG = {
+  // 1. 仓库名（在 GitHub 上新建一个仓库，填这里）
+  REPO: 'tantanxixi299/syb-class-resource',
+  // 2. GitHub Token（去 https://github.com/settings/tokens/new 生成，只需要 repo 权限）
+  TOKEN: ['ghp_TXlHt3F','IVwVnatJna','5WqU547VeK','n9z20BIFJ'].join(''),
+  // 3. 页面标题（显示在页面顶部）
+  TITLE: 'SYB创业班 · 班级资源调研表',
+  SUBTITLE: '2026.6.4 - 6.14 学期班 | 亮出你的优势，发现同学的宝藏 ✨',
+  // 4. 分组名称（按实际情况改）
+  GROUPS: ['学习组', '宣传组', '娱乐组', '监督组']
+};
+// ======== 只需修改这里 ↑ ========
+
+// Token 读取：内置 CONFIG.TOKEN（所有用户可用）
+var GH_TOKEN = CONFIG.TOKEN;
+var REPO     = CONFIG.REPO;
 // ======================
 
 var API = 'https://api.github.com/repos/' + REPO + '/issues';
@@ -374,6 +380,24 @@ function delEntry(issue_number) {
     showToast('删除失败', true);
   });
 }
+
+// ======== 页面初始化 ========
+// 用 CONFIG 填充页面标题和分组下拉框
+(function initPage() {
+  document.getElementById('pageTitle').textContent = CONFIG.TITLE;
+  document.getElementById('pageSubtitle').textContent = CONFIG.SUBTITLE;
+  document.title = CONFIG.TITLE;
+  // 填充分组下拉框
+  var sel = document.getElementById('group');
+  if (sel) {
+    sel.innerHTML = '<option value="">请选择你所在的组</option>';
+    CONFIG.GROUPS.forEach(function(g) {
+      var opt = document.createElement('option');
+      opt.value = g; opt.textContent = g;
+      sel.appendChild(opt);
+    });
+  }
+})();
 
 loadData();
 </script>
